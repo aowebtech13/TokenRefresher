@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Token Refresher</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; }
+        .status { margin: 1em 0; padding: 1em; border: 1px solid #ccc; background: #f9f9f9; }
+        .messages { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Axiom Token Refresher</h1>
+    
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <div class="status">
+        <p><strong>Status:</strong> {{ token_status }}</p>
+        <p><strong>Last Refreshed:</strong> {{ last_modified }}</p>
+    </div>
+
+    <form action="{% url 'trigger_refresh' %}" method="post">
+        {% csrf_token %}
+        <button type="submit">Manual Refresh Now</button>
+    </form>
+
+    <hr>
+    <p><small>Tokens are also refreshed automatically every 5 minutes and when <code>SCREEN0_REFRESH_TRIGGER</code> file is created.</small></p>
+</body>
+</html>
