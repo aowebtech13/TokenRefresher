@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
     'refresher',
+    'token_filter',
 ]
 
 MIDDLEWARE = [

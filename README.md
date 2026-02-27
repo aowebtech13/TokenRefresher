@@ -1,13 +1,12 @@
-# Axiom Token Refresher
+# Solana Pump.fun Token Filter & Refresher
 
-A Django-based utility to automatically and manually refresh Axiom tokens, designed for deployment on AWS.
+A Django-based utility to automatically filter Solana tokens from pump.fun and manage Axiom tokens. Features a real-time dashboard with audio alerts and Telegram notifications.
 
 ## Features
-- **Dashboard**: Monitor token status and recent refresh history.
-- **Manual Refresh**: Trigger an immediate token refresh via the UI.
-- **Automated Refresh**: Management command `refresh_tokens` for scheduling via Cron or AWS Lambda.
-- **Database Logging**: Keeps a history of all refresh attempts (success/failure).
-- **Production Ready**: Optimized with WhiteNoise for static files and environment-based configuration.
+- **Real-time Filtering**: Monitors pump.fun for tokens matching specific parameters (Market Cap, Liquidity, Socials, Volume, Age, Holders).
+- **Dashboard**: Live-updating UI at `/tokens/dashboard/` with **Audio Ringtone** alerts for new matches.
+- **Telegram Notifications**: Instant alerts sent to your Telegram bot when a token passes filters.
+- **Axiom Refresher**: Management command to refresh Axiom API tokens.
 
 ## Setup Instructions
 
@@ -18,52 +17,43 @@ A Django-based utility to automatically and manually refresh Axiom tokens, desig
 ### 2. Installation
 ```bash
 # Install dependencies
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 
 # Run migrations
-python manage.py migrate
+python3 manage.py migrate
 ```
 
 ### 3. Configuration
-Create a `.env` file in the root directory (see `.env.example`):
-- `AXIOM_REFRESH_URL`: The Axiom API endpoint.
-- `AXIOM_REFRESH_TOKEN`: Your persistent refresh token.
-- `TOKENS_FILE`: Path where the new access token will be written (default: `TOKENS.txt`).
-- `DJANGO_SECRET_KEY`: A secure key for production.
-- `DEBUG`: Set to `False` in production.
-- `ALLOWED_HOSTS`: Comma-separated list of domains (e.g., `your-app.aws-region.elb.amazonaws.com`).
+Create a `.env` file in the root directory and fill in your details:
+- `TELEGRAM_BOT_TOKEN`: Your Telegram Bot API token.
+- `TELEGRAM_CHAT_ID`: Your personal or group Telegram Chat ID.
+- `AXIOM_REFRESH_URL`: The Axiom API endpoint for refreshing tokens.
+- `AXIOM_REFRESH_TOKEN`: Your persistent Axiom refresh token.
 
-### 4. Running Locally
+### 4. Running the Filter
+To start the automatic Solana token filtering system:
 ```bash
-python manage.py runserver
+python3 manage.py start_filter
 ```
-Visit `http://127.0.0.1:8000` to see the dashboard.
+This command will continuously scan for new tokens and output matches to your console and Telegram.
 
-## Management Command
-To automate the refresh, schedule this command using a cron job or task scheduler:
-```bash
-python manage.py refresh_tokens
-```
+### 5. Using the Dashboard
+1. Start the Django server:
+   ```bash
+   python3 manage.py runserver 0.0.0.0:8000
+   ```
+2. Visit `http://127.0.0.1:8000/tokens/dashboard/` in your browser.
+3. **Important**: Click anywhere on the dashboard once to enable **Audio Alerts**. The page will play a ringtone and auto-refresh whenever a new token is detected.
 
-## AWS Deployment Tips
+## Parameters Tracked
+- **Market Cap**: Current valuation.
+- **Liquidity**: Estimated bonding curve liquidity.
+- **Socials**: Twitter and Website presence.
+- **Volume**: 24h trading volume.
+- **Age**: Time since token creation.
+- **Holders**: Total holder count.
 
-### Static Files
-The project is configured with **WhiteNoise**. Run the following before deploying:
-```bash
-python manage.py collectstatic
-```
-
-### Database
-By default, this uses `sqlite3`. For highly available AWS deployments, consider switching the `DATABASES` setting in `settings.py` to use **Amazon RDS (PostgreSQL/MySQL)**.
-
-### Application Server
-Use **Gunicorn** (included in `requirements.txt`) to serve the application:
-```bash
-gunicorn token_refresher.wsgi:application --bind 0.0.0.0:8000
-```
-
-### Scheduling
-On an EC2 instance, you can add a crontab entry to refresh every hour:
-```bash
-0 * * * * cd /path/to/app && /path/to/venv/bin/python manage.py refresh_tokens >> /var/log/token_refresh.log 2>&1
-```
+## Management Commands
+- `python3 manage.py start_filter`: Runs the Solana filtering loop.
+- `python3 manage.py refresh_tokens`: Refreshes Axiom API tokens.
+- `python3 manage.py runserver`: Starts the web dashboard.

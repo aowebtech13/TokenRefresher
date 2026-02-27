@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solana Token Filter Dashboard</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+        h1 { color: #2c3e50; margin: 0; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; color: #7f8c8d; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; }
+        tr:hover { background-color: #f9f9f9; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .badge-success { background-color: #2ecc71; color: #fff; }
+        .address { font-family: monospace; font-size: 0.85rem; color: #3498db; }
+        .social-link { margin-right: 10px; text-decoration: none; color: #3498db; }
+        #sound-status { font-size: 0.9rem; padding: 5px 10px; border-radius: 20px; background: #eee; }
+        .active-alert { background: #e74c3c !important; color: white !important; animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Solana Token Dashboard</h1>
+            <div id="sound-status">🔔 Sound Alerts Active (Auto-Refresh)</div>
+        </div>
+        
+        <p>This page will play a sound and refresh whenever a new token matches your parameters.</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Token Name</th>
+                    <th>Address</th>
+                    <th>Market Cap</th>
+                    <th>Liquidity</th>
+                    <th>Socials</th>
+                    <th>Volume</th>
+                    <th>Age</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for token in tokens %}
+                <tr>
+                    <td><strong>{{ token.name }} ({{ token.symbol }})</strong></td>
+                    <td class="address">{{ token.address }}</td>
+                    <td>${{ token.market_cap|floatformat:0 }}</td>
+                    <td>${{ token.liquidity|floatformat:0 }}</td>
+                    <td>
+                        {% if token.twitter %}<a href="{{ token.twitter }}" target="_blank" class="social-link">Twitter</a>{% endif %}
+                        {% if token.website %}<a href="{{ token.website }}" target="_blank" class="social-link">Web</a>{% endif %}
+                    </td>
+                    <td>${{ token.volume_24h|floatformat:0 }}</td>
+                    <td>{{ token.age_seconds }}s</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: #95a5a6;">No tokens found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Notification Sound (Modern alert) -->
+    <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+
+    <script>
+        const alertSound = document.getElementById('alert-sound');
+        const statusEl = document.getElementById('sound-status');
+
+        function checkNewTokens() {
+            fetch('/tokens/api/new-tokens/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.new_tokens && data.new_tokens.length > 0) {
+                        console.log("New tokens found!", data.new_tokens);
+                        statusEl.classList.add('active-alert');
+                        statusEl.innerText = "🚨 NEW TOKEN DETECTED!";
+                        
+                        // Play sound and refresh after a short delay
+                        alertSound.play().catch(e => console.log("Sound error (need user interaction):", e));
+                        
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+                    }
+                })
+                .catch(err => console.error("Poll error:", err));
+        }
+
+        // Poll every 5 seconds
+        setInterval(checkNewTokens, 5000);
+        
+        // Initial interaction to unlock audio on modern browsers
+        document.body.addEventListener('click', () => {
+            statusEl.innerText = "🔔 Sound Alerts Ready";
+        }, { once: true });
+    </script>
+</body>
+</html>
