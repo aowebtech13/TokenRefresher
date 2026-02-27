@@ -1,27 +1,24 @@
 from django.core.management.base import BaseCommand
 import time
-from token_filter.services import PumpFunFilterService
+from token_filter.services import PumpFunFilterService, SolanaWebSocketService
 
 class Command(BaseCommand):
-    help = 'Runs the Solana pump.fun token filter service'
+    help = 'Runs the Solana pump.fun token filter service with WebSocket real-time interception'
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.SUCCESS('Starting Solana pump.fun token filter...'))
+        self.stdout.write(self.style.SUCCESS('Starting Solana real-time WebSocket filter...'))
         
-        service = PumpFunFilterService()
+        filter_service = PumpFunFilterService()
+        ws_service = SolanaWebSocketService(filter_service)
+        
+        # Start the WebSocket in a background thread
+        ws_service.start_async()
         
         try:
+            # Main loop for background tasks or backup polling
             while True:
-                passed_tokens = service.run_filter_cycle()
-                
-                if passed_tokens:
-                    self.stdout.write(self.style.SUCCESS(f"Found {len(passed_tokens)} tokens passing filters:"))
-                    for token in passed_tokens:
-                        self.stdout.write(f"NAME: {token.name} | ADDRESS: {token.address}")
-                else:
-                    self.stdout.write(self.style.WARNING("No tokens passed filters in this cycle."))
-                
-                # Wait before the next cycle to avoid rate limiting
-                time.sleep(10)
+                # You can still run a backup poll cycle or just keep the process alive
+                filter_service.run_filter_cycle()
+                time.sleep(15) 
         except KeyboardInterrupt:
-            self.stdout.write(self.style.WARNING('Filter service stopped by user.'))
+            self.stdout.write(self.style.WARNING('Filter service stopped.'))
